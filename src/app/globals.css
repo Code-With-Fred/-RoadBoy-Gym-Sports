@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --nav-h: 72px;
+  }
+
+  * { border-color: theme('colors.line'); }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--nav-h) + 24px);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-ink text-bone font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The display face is only ever used uppercase — it is a headline face.
+     `.font-display` itself is Tailwind's own utility, so it is not re-declared
+     here; it only picks up the uppercase treatment. */
+  h1, h2, h3 { @apply font-display uppercase; }
+  .font-display { text-transform: uppercase; }
+
+  ::selection { @apply bg-ember text-ink; }
+
+  /* Visible, high-contrast focus for keyboard users on a dark ground. */
+  :focus-visible {
+    outline: 2px solid theme('colors.ember.DEFAULT');
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: theme('colors.ink'); }
+  ::-webkit-scrollbar-thumb { background: #2A2D33; border: 2px solid theme('colors.ink'); }
+  ::-webkit-scrollbar-thumb:hover { background: #3A3E45; }
+
+  input, textarea, select { @apply bg-transparent; }
+  input::placeholder, textarea::placeholder { @apply text-slate2; }
+
+  /* Kill autofill's blue wash inside a dark form. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: theme('colors.bone');
+    -webkit-box-shadow: 0 0 0 1000px theme('colors.coal') inset;
+    caret-color: theme('colors.bone');
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-display text-eyebrow uppercase text-ember tracking-[0.22em];
+  }
+
+  /* Thin ember rule that precedes most eyebrows. */
+  .eyebrow-rule::before {
+    content: '';
+    @apply mr-3 inline-block h-px w-8 translate-y-[-3px] bg-ember align-middle;
+  }
+
+  .hairline { @apply border-t border-line; }
+
+  .card {
+    @apply relative border border-line bg-steel transition-colors duration-300 ease-out;
+  }
+  .card-hover {
+    @apply hover:border-white/25 hover:bg-iron;
+  }
+
+  .link-underline {
+    @apply relative inline-block after:absolute after:bottom-[-2px] after:left-0 after:h-px after:w-full
+           after:origin-right after:scale-x-0 after:bg-current after:transition-transform after:duration-300
+           after:ease-out hover:after:origin-left hover:after:scale-x-100;
+  }
+
+  /* Progressive image reveal — pairs with SmartImage's blur placeholder. */
+  .img-zoom { @apply transition-transform duration-[900ms] ease-out will-change-transform; }
+  .group:hover .img-zoom { @apply scale-[1.06]; }
+
+  .overlay-bottom {
+    background: linear-gradient(to top, rgba(8,9,11,0.95) 0%, rgba(8,9,11,0.55) 38%, rgba(8,9,11,0) 72%);
+  }
+  .overlay-flat { background: rgba(8,9,11,0.62); }
+
+  /* Faint diagonal texture used behind editorial sections. */
+  .texture-grid {
+    background-image:
+      linear-gradient(theme('colors.line') 1px, transparent 1px),
+      linear-gradient(90deg, theme('colors.line') 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Scroll reveal.
+     The hidden state is gated on `.js`, which an inline script in the document
+     head sets before first paint. Without JavaScript the class never lands and
+     the content simply renders — visible markup is the default, never the
+     thing we have to switch back on. */
+  .reveal {
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+  .js .reveal[data-reveal='pending'] {
+    opacity: 0;
+    transform: translateY(var(--reveal-y, 20px));
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+  .mask-fade-r { mask-image: linear-gradient(to right, #000 82%, transparent 100%); }
+}
+
+/* Respect the OS "reduce motion" setting everywhere, including scroll reveals. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal, .js .reveal[data-reveal='pending'] { opacity: 1 !important; transform: none !important; }
+}
