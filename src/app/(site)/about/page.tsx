@@ -10,7 +10,7 @@ import { breadcrumbSchema, buildMetadata } from '@/lib/seo'
 import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'About RoadBoy Gym&Sports — A Strength Gym in Lekki, Lagos',
+  title: 'About Us — A Strength & Sports Gym in Lekki, Lagos',
   description:
     'RoadBoy Gym&Sports is a strength, conditioning and sports performance gym in Lekki, Lagos. Ten years, fifteen accredited coaches and five hundred members built around discipline, consistency and measurable results.',
   path: '/about',
