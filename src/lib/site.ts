@@ -1,117 +1,106 @@
 /**
- * Single source of truth for brand, contact and navigation.
- * Update the address / phone / socials here once the gym's real details land —
- * the footer, contact page, schema.org markup and WhatsApp links all read this.
+ * Single source of truth for the brand, the WhatsApp line and the navigation.
+ *
+ * This is the file the owner edits first: change the phone number here and
+ * every button, the floating bubble, the footer and the structured data all
+ * follow.
  */
 
+/**
+ * Resolve the canonical origin.
+ *
+ * `??` is not enough here: an env var that is *defined but empty* — which is
+ * what an empty field in the Vercel dashboard produces — passes straight
+ * through `??` and reaches `new URL('')`, which throws ERR_INVALID_URL and
+ * fails the production build. So test for truthiness after trimming, not for
+ * null.
+ *
+ * Order: an explicit URL, then the deployment's own URL (so preview builds get
+ * correct canonicals instead of pointing at production), then the default.
+ */
+const DEFAULT_SITE_URL = 'https://roadboygym.ng'
+
+function resolveSiteUrl(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    // Set automatically on Vercel. Absent locally and in the browser bundle,
+    // where the default below is correct anyway.
+    process.env.NEXT_PUBLIC_VERCEL_URL,
+    process.env.VERCEL_URL,
+  ]
+
+  for (const candidate of candidates) {
+    const parsed = normalise(candidate)
+    if (parsed) return parsed
+  }
+
+  return DEFAULT_SITE_URL
+}
+
+/**
+ * Returns a valid origin, or null for anything unusable. Adds a missing scheme
+ * and drops a trailing slash. Parsing is what decides validity — a typo in the
+ * dashboard should fall back to the default, never break the build.
+ */
+function normalise(value: string | undefined): string | null {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
+
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+
+  try {
+    const url = new URL(withScheme)
+    if (!url.hostname || !url.hostname.includes('.')) return null
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return null
+  }
+}
+
 export const SITE = {
-  name: 'RoadBoy Gym&Sports',
+  name: 'RoadBoy Gym&Sports Equipments',
   shortName: 'RoadBoy',
-  tagline: 'Build your strongest self.',
+  tagline: 'Quality gym equipment. Delivered to your door.',
   description:
-    'RoadBoy Gym&Sports is a strength, conditioning and sports performance gym in Lekki, Lagos, and a home for structured online workout programs. Train with expert coaches, follow proven plans, and build real, measurable results.',
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://roadboygym.ng',
+    'Buy quality gym and sports equipment with free nationwide delivery, free installation and payment on delivery from RoadBoy Gym&Sports Equipments.',
+  url: resolveSiteUrl(),
   locale: 'en_NG',
-  currency: 'NGN',
+  country: 'NG',
+  countryName: 'Nigeria',
 
   contact: {
-    email: 'train@roadboygym.ng',
-    supportEmail: 'support@roadboygym.ng',
-    phone: '+234 812 000 4567',
-    phoneHref: '+2348120004567',
-    whatsapp: '2348120004567',
-    whatsappMessage: 'Hi RoadBoy — I would like to know more about training with you.',
+    /** How the number is shown to Nigerian customers. */
+    phoneDisplay: '0805 359 4533',
+    /** E.164, for tel: links and structured data. */
+    phoneIntl: '+2348053594533',
+    /** Digits only, for wa.me links. */
+    whatsapp: '2348053594533',
   },
 
-  address: {
-    line1: '14B Admiralty Way',
-    line2: 'Lekki Phase 1',
-    city: 'Lagos',
-    state: 'Lagos State',
-    postalCode: '106104',
-    country: 'NG',
-    countryName: 'Nigeria',
-    // Swap for the gym's real coordinates — these drive the map + local SEO.
-    lat: 6.4413,
-    lng: 3.4726,
-  },
-
-  hours: [
-    { days: 'Monday — Friday', open: '05:00', close: '22:00' },
-    { days: 'Saturday', open: '06:00', close: '20:00' },
-    { days: 'Sunday', open: '08:00', close: '18:00' },
+  /**
+   * The promises this page repeats. Order matters — it drives the hero strip
+   * and the benefits grid.
+   */
+  promises: [
+    'Free nationwide delivery',
+    'Free installation',
+    'Pay on delivery',
+    'Delivery within 3 days',
   ],
 
-  /** Used by schema.org openingHoursSpecification. */
-  hoursSchema: [
-    { days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '05:00', closes: '22:00' },
-    { days: ['Saturday'], opens: '06:00', closes: '20:00' },
-    { days: ['Sunday'], opens: '08:00', closes: '18:00' },
-  ],
-
-  socials: [
-    { name: 'Instagram', href: 'https://instagram.com/roadboygym', handle: '@roadboygym' },
-    { name: 'TikTok', href: 'https://tiktok.com/@roadboygym', handle: '@roadboygym' },
-    { name: 'YouTube', href: 'https://youtube.com/@roadboygym', handle: '@roadboygym' },
-    { name: 'Facebook', href: 'https://facebook.com/roadboygym', handle: '/roadboygym' },
-  ],
-
-  stats: [
-    { value: 500, suffix: '+', label: 'Active members' },
-    { value: 15, suffix: '+', label: 'Expert trainers' },
-    { value: 50, suffix: '+', label: 'Weekly classes' },
-    { value: 10, suffix: '+', label: 'Years experience' },
-  ],
+  /**
+   * Social profiles are intentionally empty. Nothing renders until real URLs
+   * are added here — an invented handle is worse than no link at all.
+   */
+  socials: [] as Array<{ name: 'Instagram' | 'Facebook' | 'TikTok'; href: string; handle: string }>,
 } as const
 
+/** Anchors on the single landing page — there are no other routes. */
 export const NAV_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Programs', href: '/programs' },
-  { label: 'Workouts', href: '/workouts' },
-  { label: 'Trainers', href: '/trainers' },
-  { label: 'Membership', href: '/membership' },
+  { label: 'Home', href: '#home' },
+  { label: 'Equipment', href: '#equipment' },
+  { label: 'Why Us', href: '#why-us' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Reviews', href: '#reviews' },
+  { label: 'FAQ', href: '#faq' },
 ] as const
-
-export const FOOTER_NAV = [
-  {
-    title: 'Gym',
-    links: [
-      { label: 'About us', href: '/about' },
-      { label: 'Facilities', href: '/facilities' },
-      { label: 'Trainers', href: '/trainers' },
-      { label: 'Transformations', href: '/transformations' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
-  {
-    title: 'Train online',
-    links: [
-      { label: 'All programs', href: '/programs' },
-      { label: 'Workout library', href: '/workouts' },
-      { label: 'Beginner strength', href: '/programs/beginner-strength' },
-      { label: 'Fat loss & conditioning', href: '/programs/fat-loss-conditioning' },
-      { label: 'Muscle building', href: '/programs/muscle-building' },
-    ],
-  },
-  {
-    title: 'Account',
-    links: [
-      { label: 'Membership plans', href: '/membership' },
-      { label: 'My dashboard', href: '/dashboard' },
-      { label: 'Log in', href: '/login' },
-      { label: 'Create account', href: '/signup' },
-    ],
-  },
-] as const
-
-export function whatsappLink(message: string = SITE.contact.whatsappMessage): string {
-  return `https://wa.me/${SITE.contact.whatsapp}?text=${encodeURIComponent(message)}`
-}
-
-export function mapsLink(): string {
-  const { line1, line2, city, countryName } = SITE.address
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${line1}, ${line2}, ${city}, ${countryName}`,
-  )}`
-}

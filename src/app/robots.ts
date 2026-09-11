@@ -3,14 +3,7 @@ import { SITE } from '@/lib/site'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        // Account and commerce paths hold nothing a crawler should index.
-        disallow: ['/dashboard', '/admin', '/checkout', '/api/', '/auth/', '/update-password'],
-      },
-    ],
+    rules: [{ userAgent: '*', allow: '/' }],
     sitemap: `${SITE.url}/sitemap.xml`,
     host: SITE.url,
   }

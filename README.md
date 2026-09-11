@@ -1,14 +1,18 @@
-# ROADBOY GYM&SPORTS
+# RoadBoy Gym&Sports Equipments
 
-A production-ready website for a premium gym that also sells digital workout
-programs. It is four things in one codebase:
+A conversion-focused landing page for a Nigerian gym and sports equipment
+supplier. One page, one job: get the visitor into WhatsApp with a message that
+already says which equipment they want.
 
-- a **marketing site** for the physical gym (facilities, trainers, community, results)
-- a **digital marketplace** selling structured workout programs
-- a **training app** members log into to follow their program and track progress
-- an **admin console** the gym owner runs the business from, without touching code
+There is no cart, no checkout, no accounts and no database. **WhatsApp is the
+checkout.**
 
-Built with Next.js 15 (App Router), TypeScript, Tailwind CSS and Supabase.
+```
+VISIT → VIEW EQUIPMENT → ORDER ON WHATSAPP → DELIVERY → FREE INSTALLATION → PAY ON DELIVERY
+```
+
+Built with Next.js 15 (App Router), TypeScript and Tailwind CSS. The whole page
+is static — no server, no environment variables, no secrets.
 
 ---
 
@@ -21,264 +25,184 @@ npm run dev
 
 Open <http://localhost:3000>.
 
-**The whole marketing site works with no configuration at all.** Every page
-renders from the curated content in `src/lib/content`, so you can look at the
-finished thing before deciding anything about a backend. Accounts, checkout, the
-dashboard and the admin console light up once Supabase is connected.
+---
+
+## The three files you will actually edit
+
+### 1. `src/lib/site.ts` — brand and phone number
+
+The WhatsApp number, the display phone number, the navigation and the four
+promises. Change the number here and every button, the floating bubble, the
+footer and the structured data all follow.
+
+```ts
+contact: {
+  phoneDisplay: '0805 359 4533',
+  phoneIntl: '+2348053594533',
+  whatsapp: '2348053594533',   // digits only, for wa.me links
+}
+```
+
+**Social links are deliberately empty.** Nothing renders until you add real URLs
+to `SITE.socials` — an invented handle sends your customers to someone else's
+account.
+
+### 2. `src/lib/products.ts` — the catalogue
+
+Plain data. Add, remove or reorder freely; the grid, the filter tabs and the
+WhatsApp messages all follow.
+
+```ts
+{
+  id: 'treadmill',
+  name: 'Treadmill',
+  category: 'Treadmills',
+  filter: 'treadmills',        // drives the filter tabs
+  image: IMAGES.products.treadmill,
+  price: null,                 // null -> "Price on request"
+  description: '...',
+  specs: [],                   // empty -> "Full specifications on request"
+  availability: 'Available to order',
+}
+```
+
+**Two fields are blank on purpose.** Inventing either would mislead someone
+about to spend six figures:
+
+- `price: null` renders *"Price on request"* and sends them to WhatsApp.
+  Set `price: '₦450,000'` when you want a figure on the card.
+- `specs: []` renders *"Full specifications sent on request"*. Fill it with real
+  numbers from your actual stock: `specs: [{ label: 'Motor', value: '2.5 HP' }]`
+
+### 3. `src/lib/images.ts` — the photography
+
+Every image on the page is referenced here. **The current photos are stock
+placeholders and should be the first thing you replace.** For an equipment
+retailer that is not polish — buyers want to see the exact machine that will
+arrive at their door, and your own warehouse and installation photos will
+out-convert any stock image.
+
+Upload to `/public/images`, paste the paths here, keep the keys unchanged.
 
 ---
 
-## Connecting the backend
+## How WhatsApp ordering works
 
-### 1. Create a Supabase project
+Every call to action is built in `src/lib/whatsapp.ts`. No link is written by
+hand, so none can end up opening a blank chat.
 
-Copy `.env.example` to `.env.local` and fill in:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
-
-The first two are public and safe in the browser. **The service role key is not** —
-it bypasses every security rule, so it is only ever read on the server (by the
-payment webhook and the seed script) and must never gain a `NEXT_PUBLIC_` prefix.
-
-### 2. Run the migrations
-
-In the Supabase SQL editor, run in order:
-
-1. `supabase/migrations/0001_schema.sql` — tables, relationships, triggers
-2. `supabase/migrations/0002_rls.sql` — Row Level Security policies
-
-### 3. Seed the content
-
-```bash
-npm run seed
-```
-
-This pushes the programs, workouts, exercises, trainers, memberships,
-testimonials, transformations and gallery from `src/lib/content` into the
-database. It is idempotent — re-run it any time.
-
-### 4. Make yourself an admin
-
-Sign up on the site, then in the SQL editor:
-
-```sql
-update public.profiles set role = 'admin' where email = 'you@yourgym.com';
-```
-
-`/admin` is now open to you.
-
-### 5. Connect payments
-
-```
-PAYSTACK_SECRET_KEY=sk_live_...
-PAYSTACK_WEBHOOK_SECRET=...
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_live_...
-```
-
-In the Paystack dashboard, point the webhook at:
-
-```
-https://yourdomain.com/api/payments/webhook
-```
-
-Until the secret key is set, checkout says so plainly rather than pretending to
-charge anyone.
-
----
-
-## How the money works
-
-```
-Browse → Program detail → Checkout → Paystack hosted page
-                                          ↓
-                              webhook (signature verified)
-                                          ↓
-                          order marked paid · program granted
-                                          ↓
-                            Dashboard → Workouts unlocked
-```
-
-Three things are deliberate here:
-
-- **The browser never sets the price.** Checkout sends a program slug; the server
-  looks the price up in the catalogue. A tampered request cannot change what is charged.
-- **The browser never grants access.** The success page only *reads* payment state.
-  Entitlements are written by the webhook, after re-verifying with Paystack.
-- **Card details never reach this application.** Paystack holds the instrument; we
-  store only their transaction reference.
-
-Bought without an account? The entitlement is parked against the email address and
-claimed automatically when someone signs up with it.
-
-### Swapping payment provider
-
-Everything goes through the `PaymentProvider` interface in
-`src/lib/payments/types.ts`. To move to Flutterwave or Stripe, write one more
-implementation and change the single export in `src/lib/payments/index.ts`.
-Nothing else in the app knows which gateway is in use.
-
----
-
-## Security
-
-Access is enforced in the database, not the interface.
-
-| Data | Who can read it |
+| Where | Message |
 |---|---|
-| Marketing content | Everyone |
-| Free library workouts | Everyone |
-| Program workouts | Only users with a matching `user_programs` row |
-| Orders, progress, profile | Only their owner (and admins) |
-| Payments, customers | Admins only |
+| Hero, nav, floating bubble | *"I'm interested in your gym equipment…"* |
+| Each product card | *"I'm interested in the **Power Rack**. Please send me the price, specifications and availability."* |
+| Build a home gym | *"I want to set up a home gym. Please help me choose…"* |
+| Outfit a commercial gym | *"I want to outfit a commercial gym. Please send me a quote…"* |
+| Need help choosing | *"I need help choosing equipment…"* |
+| Final CTA | *"Please send me a quote… with delivery and installation."* |
 
-Row Level Security is on for every table. The key policy is
-`workouts_readable_when_free_or_owned` — the UI padlock is a courtesy, that
-policy is the actual paywall. `user_programs` has **no** insert policy for
-members, so nobody can grant themselves a program; only the webhook (running as
-the service role) writes there.
+That is 22 distinct pre-filled messages across 37 links. The product name in the
+message is the point: you know what the customer wants before you reply.
 
-Admin is checked three times — middleware, layout, and RLS — so a mistake in any
-one of them is not a breach.
+To override the message for one product, set `whatsappMessage` on it.
 
 ---
 
-## Managing the site without code
+## Adding customer reviews
 
-`/admin` is a real CMS. The owner can change, with no deploy:
+`src/lib/reviews.ts` is an empty array, and the Reviews section reads that.
 
-| Section | What it controls |
-|---|---|
-| Programs | Names, copy, prices, covers, what is featured, published state |
-| Workouts | Session names, summaries, durations, covers, free/paid |
-| Exercises | Coaching cues, substitutions, **demonstration video URLs** |
-| Memberships | Plans, prices, features, which one is highlighted |
-| Trainers | Profiles, bios, certifications, portraits, ordering |
-| Testimonials | Member quotes and ratings |
-| Gallery | The photographs across the homepage and facilities page |
-| Orders / Customers | Read-only views of the business |
-| Overview | Revenue, sales, programs sold, most popular program |
+While it is empty the page shows an honest panel explaining that we publish real
+feedback only. Add your first entry and the section automatically switches to a
+proper review wall — no other change needed.
 
-**How the fallback works.** Every read goes through `src/lib/data.ts`, which
-prefers the database and falls back to `src/lib/content` when a table is empty.
-That is why a fresh clone shows a complete site, and why the admin console shows
-an empty table honestly instead of pretending built-in content is editable.
-
-Gym address, phone, hours and social links live in one file: `src/lib/site.ts`.
-Changing them there updates the footer, contact page, WhatsApp links and the
-local-SEO structured data at once.
+Nothing there is invented. A fabricated review is the easiest thing for a
+sceptical buyer to catch, and on a six-figure purchase it costs the sale.
 
 ---
 
-## Replacing the photography
-
-Every image is referenced from **`src/lib/images.ts`**. The placeholders are real
-gym photography from Unsplash, sized and cropped through `next/image`.
-
-To use the gym's own photos: upload them (Supabase Storage, or `/public`), paste
-the URLs over the ones in that file, and keep the keys unchanged. Add the host to
-`images.remotePatterns` in `next.config.mjs` if it is somewhere new. Program
-covers, trainer portraits and gallery images can also be replaced from `/admin`
-without touching the file at all.
-
----
-
-## Project structure
+## Structure
 
 ```
 src/
 ├── app/
-│   ├── (site)/          Public site — nav + footer chrome
-│   ├── (auth)/          Login, signup, password reset — no chrome
-│   ├── dashboard/       Member area: programs, workout player, orders, settings
-│   ├── admin/           Owner console: catalogue, business, content
-│   └── api/             checkout · payments/webhook · progress · contact · admin
+│   ├── page.tsx          The landing page — every section, in order
+│   ├── layout.tsx        Fonts, metadata, Open Graph
+│   ├── globals.css       Design tokens and primitives
+│   ├── not-found.tsx     404 -> back to the equipment
+│   └── robots.ts  sitemap.ts
 ├── components/
-│   ├── ui/              Buttons, fields, badges, headings — the design system
-│   ├── site/            Nav, footer, gallery, reveal, images, page hero
-│   ├── home/            Homepage sections
-│   ├── programs/ workouts/ trainers/ transformations/ membership/ checkout/
-│   ├── dashboard/       Member shell, workout player, progress components
-│   └── admin/           Admin shell, CMS resource manager, charts, tables
-├── lib/
-│   ├── content/         Curated programs, workouts, exercises, coaches, copy
-│   ├── supabase/        Browser / server / admin clients
-│   ├── payments/        Provider abstraction + Paystack implementation
-│   ├── data.ts          Read layer — database first, content fallback
-│   ├── progress.ts      Turning progress rows into dashboard numbers
-│   ├── seo.ts           Metadata + schema.org builders
-│   ├── images.ts        Every photograph on the site
-│   └── site.ts          Brand, address, hours, navigation
-├── middleware.ts        Session refresh + route protection
-supabase/migrations/     Schema and RLS
-scripts/seed.ts          Sync content → database
+│   ├── sections/         Hero, benefits, catalogue, audiences, why, how it
+│   │                     works, delivery, reviews, FAQ, final CTA
+│   ├── site/             Nav, footer, wordmark, floating WhatsApp, image, reveal
+│   └── ui/               Buttons, WhatsApp link + glyph, headings, badges
+└── lib/
+    ├── site.ts           Brand, phone, navigation      <- edit
+    ├── products.ts       The catalogue                 <- edit
+    ├── images.ts         All photography               <- edit
+    ├── reviews.ts        Customer reviews (empty)      <- edit
+    ├── whatsapp.ts       Every pre-filled message
+    ├── faqs.ts           FAQ copy + its rich result
+    └── seo.ts            Structured data
 ```
 
 ---
 
 ## Design system
 
-A narrow, deliberate palette: charcoal ground, bone type, **one** accent (ember
-`#FF4A1C`) reserved for actions, prices and anything the eye must find first.
-Resist adding a second accent — the restraint is what makes it read as premium.
+Charcoal ground, bone type, **one** accent — ember `#FF4A1C` — on every call to
+action, price and hover state. Resist adding a second accent; the restraint is
+what makes it read as premium rather than as a template.
 
-- **Type**: Barlow Condensed for headlines (always uppercase), Inter for body.
-  Fluid sizes via `clamp()`, so nothing is ever too small on a phone.
-- **Shape**: 2–4px radii, hairline borders, generous spacing. Sharp, not soft.
-- **Motion**: scroll reveals, counters, image zoom on hover, a condensing nav.
-  All fast, all optional — `prefers-reduced-motion` disables them wholesale.
+WhatsApp buttons use the accent, not WhatsApp green, so the page keeps a single
+accent. The WhatsApp glyph on each button is what signals where it goes. If you
+would rather have the familiar green, it is one colour token.
+
+- **Type** — Barlow Condensed headlines (always uppercase), Inter body. Fluid
+  `clamp()` sizes, so nothing is ever too small on a phone.
+- **Shape** — 2–4px radii, hairline borders, generous spacing. Sharp, not soft.
+- **Motion** — scroll reveals, image zoom on hover, a condensing nav, one slow
+  pulse on the floating button. `prefers-reduced-motion` disables all of it.
 
 Tokens live in `tailwind.config.ts` and `src/app/globals.css`.
 
 ---
 
-## Accessibility
+## Mobile, performance, accessibility
 
-Semantic landmarks and heading order throughout; a skip link; visible ember focus
-rings on every interactive element; real `<table>` markup for tabular data;
-labelled form controls with `aria-describedby` / `aria-invalid` wired up by the
-`Field` primitive; `aria-expanded` on every disclosure; keyboard support in the
-gallery lightbox (arrows, Escape) and mobile nav.
+Most of this traffic arrives from Instagram, TikTok and WhatsApp on a phone, so:
 
-Charts ship a visually-hidden data table so the numbers are readable without
-colour or a pointer, and the accent was validated for contrast against the card
-surface rather than eyeballed.
-
-**Content is visible without JavaScript.** Scroll-reveal hiding is gated on a `js`
-class set by an inline script — if JS never runs, nothing is ever hidden. Images
-are likewise not gated on client state.
-
----
-
-## Performance
-
-- Marketing pages are static or ISR (`revalidate = 3600`); account pages are dynamic
-- One `priority` image per page (the hero — the LCP element); everything else lazy
-- Responsive `srcset` and AVIF/WebP via `next/image`
-- No animation library — scroll reveal and counters are ~40 lines of
-  `IntersectionObserver` and `requestAnimationFrame`
-- No chart library — the two admin charts are hand-drawn SVG
-- ~105 kB shared JS
+- One `priority` image on the page (the hero, the LCP element). Every other
+  image lazy-loads with a responsive `srcset` in AVIF/WebP.
+- No animation library, no chart library, no UI framework — ~124 kB first load
+  for the whole page, fully static.
+- 48–56px tap targets on every button; the WhatsApp action is on screen at all
+  times, in the nav and then in the floating bubble.
+- **Content renders without JavaScript.** Scroll-reveal hiding is gated on a
+  `js` class set by an inline script, so if JS never runs nothing is ever
+  hidden. Images are not gated on client state either.
+- Semantic landmarks and heading order, a skip link, visible ember focus rings,
+  `aria-expanded` on the FAQ and menu, real `alt` text on every image.
 
 ---
 
 ## SEO
 
-Per-page titles, descriptions, canonicals and Open Graph; `sitemap.xml` and
-`robots.txt` generated from the content (account and checkout paths excluded);
-schema.org for the gym (`ExerciseGym` + `LocalBusiness` with NAP, geo and opening
-hours), each `Product` program with its rating, each coach as a `Person`,
-breadcrumbs, and FAQs on the programs and membership pages.
+Targets Nigerian buying intent — *gym equipment in Nigeria*, *buy gym equipment
+Nigeria*, *home gym equipment Nigeria*, *commercial gym equipment Nigeria*,
+*treadmill Nigeria*, *gym setup Nigeria*.
 
-Targets `gym near me`, `gym in Lekki`, `personal training Lagos`, `online workout
-programs`, `muscle building program`, `fat loss workout`, `gym membership Lagos`.
+Structured data covers the store, the delivery and installation service, and the
+FAQ.
 
-**Before launch**, replace the placeholder details in `src/lib/site.ts` — address,
-phone, coordinates, socials, `NEXT_PUBLIC_SITE_URL` — and make sure they match
-your Google Business Profile exactly. Local ranking depends on that consistency.
+**Two deliberate omissions in `src/lib/seo.ts`**, both because the information
+has not been supplied:
+
+- *No postal address.* A fabricated shop address would put a wrong pin on the
+  map and damage the local listing it was meant to help. `areaServed: Nigeria`
+  carries the nationwide-delivery signal instead. Add a real address to
+  `site.ts` and extend the schema when you have one.
+- *No prices in the product schema.* Google penalises prices that disagree with
+  the page, and the page currently says "on request".
 
 ---
 
@@ -290,19 +214,16 @@ npm run build      # production build
 npm run start      # serve the production build
 npm run typecheck  # tsc --noEmit
 npm run lint       # eslint
-npm run seed       # sync src/lib/content into Supabase
 ```
 
 ---
 
 ## Before you launch
 
-- [ ] Replace the gym details in `src/lib/site.ts`
-- [ ] Replace the photography in `src/lib/images.ts` (or via `/admin`)
+- [ ] Replace the stock photography in `src/lib/images.ts` with your own equipment
+- [ ] Confirm the WhatsApp number in `src/lib/site.ts` is the one you monitor
+- [ ] Add real prices and specifications to `src/lib/products.ts`
+- [ ] Add your Instagram / Facebook / TikTok URLs to `SITE.socials`
 - [ ] Set `NEXT_PUBLIC_SITE_URL` to the real domain
-- [ ] Run both migrations, then `npm run seed`
-- [ ] Promote your account to `admin`
-- [ ] Add live Paystack keys and register the webhook URL
-- [ ] Take one real test payment end-to-end and confirm it unlocks the dashboard
-- [ ] Have a solicitor review `/terms` and `/privacy` (drafts are written, matched to how the site behaves)
-- [ ] Confirm the transformation and testimonial content is genuine and consented to
+- [ ] Send yourself a test order from a phone and check the message arrives right
+- [ ] Add a real business address once there is a premises, for local search

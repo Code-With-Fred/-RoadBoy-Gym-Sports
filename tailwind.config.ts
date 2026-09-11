@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * ROADBOY GYM&SPORTS design system.
+ * RoadBoy Gym&Sports Equipments design system.
  *
  * The palette is deliberately narrow: a charcoal/black ground, bone-white
  * typography and exactly one accent (ember) reserved for actions, prices and
@@ -65,6 +65,11 @@ const config: Config = {
           '100%': { transform: 'translateY(140%)', opacity: '0' },
         },
         'slide-down': { from: { opacity: '0', transform: 'translateY(-8px)' }, to: { opacity: '1', transform: 'none' } },
+        // A single slow halo behind the floating WhatsApp button.
+        'ping-slow': {
+          '0%': { transform: 'scale(1)', opacity: '0.5' },
+          '70%, 100%': { transform: 'scale(1.35)', opacity: '0' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both',
@@ -72,6 +77,7 @@ const config: Config = {
         marquee: 'marquee 38s linear infinite',
         'scroll-hint': 'scroll-hint 2s cubic-bezier(0.65,0,0.35,1) infinite',
         'slide-down': 'slide-down 0.22s cubic-bezier(0.22,1,0.36,1) both',
+        'ping-slow': 'ping-slow 2.6s cubic-bezier(0,0,0.2,1) infinite',
       },
     },
   },

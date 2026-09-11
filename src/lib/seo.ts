@@ -1,161 +1,59 @@
-import type { Metadata } from 'next'
-import { IMAGES, sized } from '@/lib/images'
-import { SITE } from '@/lib/site'
-import type { Program, Trainer } from '@/lib/types'
-
-const OG_IMAGE = sized(IMAGES.og.src, 1200, 80)
-
-/** Page metadata with canonical, Open Graph and Twitter cards filled in. */
-export function buildMetadata({
-  title,
-  description,
-  path = '/',
-  image = OG_IMAGE,
-  type = 'website',
-  noIndex = false,
-}: {
-  title: string
-  description: string
-  path?: string
-  image?: string
-  type?: 'website' | 'article' | 'profile'
-  noIndex?: boolean
-}): Metadata {
-  const url = `${SITE.url}${path === '/' ? '' : path}`
-  return {
-    title,
-    description,
-    alternates: { canonical: url },
-    robots: noIndex ? { index: false, follow: false } : undefined,
-    openGraph: {
-      title: `${title} | ${SITE.name}`,
-      description,
-      url,
-      siteName: SITE.name,
-      locale: SITE.locale,
-      type,
-      images: [{ url: image, width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${title} | ${SITE.name}`,
-      description,
-      images: [image],
-    },
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Structured data                                                             */
-/* -------------------------------------------------------------------------- */
+import { IMAGES, sized } from './images'
+import { PRODUCTS } from './products'
+import { SITE } from './site'
 
 /**
- * HealthClub + LocalBusiness. This is the markup that matters for
- * "gym near me" style queries — keep the NAP identical to the footer.
+ * Structured data.
+ *
+ * Two deliberate omissions, both because the information has not been supplied
+ * and inventing it would be worse than leaving it out:
+ *
+ *   - No PostalAddress. A fabricated shop address would put a wrong pin on the
+ *     map and damage the local listing it was meant to help. `areaServed`
+ *     carries the nationwide-delivery signal instead.
+ *   - No `offers` price on products. Google penalises prices that disagree with
+ *     the page, and the page says "on request".
+ *
+ * Add a real address in site.ts and prices in products.ts, then extend here.
  */
-export function gymSchema() {
+
+export function organisationSchema() {
   return {
     '@context': 'https://schema.org',
-    '@type': ['HealthAndBeautyBusiness', 'ExerciseGym', 'LocalBusiness'],
-    '@id': `${SITE.url}/#gym`,
+    '@type': 'Store',
+    '@id': `${SITE.url}/#store`,
     name: SITE.name,
     description: SITE.description,
     url: SITE.url,
-    telephone: SITE.contact.phone,
-    email: SITE.contact.email,
-    image: OG_IMAGE,
-    priceRange: '₦₦',
+    image: sized(IMAGES.og.src, 1200, 80),
+    telephone: SITE.contact.phoneIntl,
     currenciesAccepted: 'NGN',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: `${SITE.address.line1}, ${SITE.address.line2}`,
-      addressLocality: SITE.address.city,
-      addressRegion: SITE.address.state,
-      postalCode: SITE.address.postalCode,
-      addressCountry: SITE.address.country,
+    paymentAccepted: 'Cash on delivery',
+    areaServed: { '@type': 'Country', name: SITE.countryName },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: SITE.contact.phoneIntl,
+      contactType: 'sales',
+      areaServed: 'NG',
+      availableLanguage: ['en'],
     },
-    geo: { '@type': 'GeoCoordinates', latitude: SITE.address.lat, longitude: SITE.address.lng },
-    openingHoursSpecification: SITE.hoursSchema.map((entry) => ({
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: entry.days,
-      opens: entry.opens,
-      closes: entry.closes,
-    })),
-    sameAs: SITE.socials.map((social) => social.href),
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
-      name: 'Memberships and training',
-      itemListElement: [
-        'Personal training',
-        'Strength training',
-        'Group training',
-        'Cardio and conditioning',
-        'Nutrition guidance',
-        'Online workout programs',
-      ].map((name) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name } })),
+      name: 'Gym and sports equipment',
+      itemListElement: PRODUCTS.map((product) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Product',
+          name: product.name,
+          category: product.category,
+          description: product.description,
+        },
+      })),
     },
   }
 }
 
-/** Product markup for a digital program, including its aggregate rating. */
-export function programSchema(program: Program) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: `${program.name} — ${program.weeks} Week Workout Program`,
-    description: program.description,
-    image: sized(program.image.src, 1200, 80),
-    brand: { '@type': 'Brand', name: SITE.name },
-    sku: program.slug,
-    category: 'Fitness training program',
-    offers: {
-      '@type': 'Offer',
-      url: `${SITE.url}/programs/${program.slug}`,
-      priceCurrency: 'NGN',
-      price: program.priceNaira,
-      availability: 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: SITE.name },
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: program.rating,
-      reviewCount: program.reviewCount,
-      bestRating: 5,
-      worstRating: 1,
-    },
-  }
-}
-
-export function trainerSchema(trainer: Trainer) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: trainer.name,
-    jobTitle: trainer.role,
-    description: trainer.shortBio,
-    image: sized(trainer.image.src, 800, 80),
-    url: `${SITE.url}/trainers/${trainer.slug}`,
-    worksFor: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-    knowsAbout: trainer.specialty,
-    hasCredential: trainer.certifications,
-    sameAs: Object.values(trainer.socials).filter(Boolean),
-  }
-}
-
-export function breadcrumbSchema(trail: Array<{ name: string; path: string }>) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: trail.map((crumb, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: crumb.name,
-      item: `${SITE.url}${crumb.path}`,
-    })),
-  }
-}
-
-export function faqSchema(items: Array<{ question: string; answer: string }>) {
+export function faqSchema(items: ReadonlyArray<{ question: string; answer: string }>) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -164,5 +62,19 @@ export function faqSchema(items: Array<{ question: string; answer: string }>) {
       name: item.question,
       acceptedAnswer: { '@type': 'Answer', text: item.answer },
     })),
+  }
+}
+
+/** Makes the delivery and installation promises machine-readable too. */
+export function serviceSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'Gym equipment delivery and installation',
+    provider: { '@id': `${SITE.url}/#store` },
+    areaServed: { '@type': 'Country', name: SITE.countryName },
+    serviceType: 'Gym equipment supply, delivery and installation',
+    description:
+      'Free nationwide delivery and free on-site installation of gym and sports equipment across Nigeria, with payment on delivery.',
   }
 }
