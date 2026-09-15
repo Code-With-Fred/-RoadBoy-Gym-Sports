@@ -47,42 +47,50 @@ contact: {
 to `SITE.socials` — an invented handle sends your customers to someone else's
 account.
 
-### 2. `src/lib/products.ts` — the catalogue
+### 2. `src/lib/products.ts` — the catalogue and price list
 
-Plain data. Add, remove or reorder freely; the grid, the filter tabs and the
-WhatsApp messages all follow.
+RoadBoy's current price list: **27 products** across four tabs — Cardio (7),
+Strength (9), Sports & Games (5) and Massage & Recovery (6). Plain data; add,
+remove or reorder freely and the grid, tab counts and WhatsApp messages follow.
 
 ```ts
 {
-  id: 'treadmill',
-  name: 'Treadmill',
-  category: 'Treadmills',
-  filter: 'treadmills',        // drives the filter tabs
-  image: IMAGES.products.treadmill,
-  price: null,                 // null -> "Price on request"
+  id: 'treadmill-2-5hp',
+  name: '2.5HP Treadmill',
+  category: 'Treadmill',
+  filter: 'cardio',              // drives the filter tabs
+  image: productImage('treadmill-2-5hp'),
+  priceNaira: 830_000,           // whole Naira; null -> "Price on request"
   description: '...',
-  specs: [],                   // empty -> "Full specifications on request"
+  specs: [
+    { label: 'Motor', value: '2.5 HP' },
+    { label: 'Max user weight', value: '120 kg' },
+  ],
   availability: 'Available to order',
 }
 ```
 
-**Two fields are blank on purpose.** Inventing either would mislead someone
-about to spend six figures:
-
-- `price: null` renders *"Price on request"* and sends them to WhatsApp.
-  Set `price: '₦450,000'` when you want a figure on the card.
-- `specs: []` renders *"Full specifications sent on request"*. Fill it with real
-  numbers from your actual stock: `specs: [{ label: 'Motor', value: '2.5 HP' }]`
+- **Specs come only from the supplier's list.** Nothing is estimated. If a spec
+  was not supplied, it is not shown.
+- The "All" tab shows the first 8 products, then **Show all 27**. Collapsed
+  cards are hidden, not removed, so search engines still see the full range.
 
 ### 3. `src/lib/images.ts` — the photography
 
-Every image on the page is referenced here. **The current photos are stock
-placeholders and should be the first thing you replace.** For an equipment
-retailer that is not polish — buyers want to see the exact machine that will
-arrive at their door, and your own warehouse and installation photos will
-out-convert any stock image.
+**Product photos.** 12 products have an illustrative public-domain photo in
+`/public/images/products` (sources in `SOURCES.md` there). Each shows the right
+*type* of product, not the exact model, so the card labels it
+**"Similar model shown"**.
 
-Upload to `/public/images`, paste the paths here, keep the keys unchanged.
+The other 15 products show a designed **"Photo of this model on WhatsApp"**
+tile instead. That is deliberate — a stock photo of a *different* machine would
+mislead someone about to spend six figures, and no honest match existed for
+massage guns, steppers, the plate boards or the benches with lat pulldown.
+
+To add a real photo: save it as `/public/images/products/<product-id>.jpg`,
+add or update its entry in `PRODUCT_IMAGES`, and set `representative: false`.
+**Real photos of RoadBoy's own stock will out-convert every stock image on this
+page** — this is the single most valuable next step.
 
 ---
 
@@ -94,14 +102,14 @@ hand, so none can end up opening a blank chat.
 | Where | Message |
 |---|---|
 | Hero, nav, floating bubble | *"I'm interested in your gym equipment…"* |
-| Each product card | *"I'm interested in the **Power Rack**. Please send me the price, specifications and availability."* |
+| Each product card | *"I'd like to order the **2.5HP Treadmill (₦830,000)**. Please confirm availability and delivery to my location."* |
 | Build a home gym | *"I want to set up a home gym. Please help me choose…"* |
 | Outfit a commercial gym | *"I want to outfit a commercial gym. Please send me a quote…"* |
 | Need help choosing | *"I need help choosing equipment…"* |
 | Final CTA | *"Please send me a quote… with delivery and installation."* |
 
-That is 22 distinct pre-filled messages across 37 links. The product name in the
-message is the point: you know what the customer wants before you reply.
+Every product sends its own name and price, so you know exactly what the
+customer wants — and what price they saw — before you reply.
 
 To override the message for one product, set `whatsappMessage` on it.
 
@@ -189,20 +197,20 @@ Most of this traffic arrives from Instagram, TikTok and WhatsApp on a phone, so:
 
 Targets Nigerian buying intent — *gym equipment in Nigeria*, *buy gym equipment
 Nigeria*, *home gym equipment Nigeria*, *commercial gym equipment Nigeria*,
-*treadmill Nigeria*, *gym setup Nigeria*.
+*treadmill price in Nigeria*, *snooker table Nigeria*, *table tennis table
+Nigeria*, *massage gun Nigeria*.
 
 Structured data covers the store, the delivery and installation service, and the
 FAQ.
 
-**Two deliberate omissions in `src/lib/seo.ts`**, both because the information
-has not been supplied:
+Every product with a price is published as a priced `Offer` in NGN, generated
+from the same data as the cards, so the markup can never disagree with the page.
 
-- *No postal address.* A fabricated shop address would put a wrong pin on the
-  map and damage the local listing it was meant to help. `areaServed: Nigeria`
-  carries the nationwide-delivery signal instead. Add a real address to
-  `site.ts` and extend the schema when you have one.
-- *No prices in the product schema.* Google penalises prices that disagree with
-  the page, and the page currently says "on request".
+**One deliberate omission:** there is no postal address. None has been supplied,
+and a fabricated shop address would put a wrong pin on the map and damage the
+local listing it was meant to help. `areaServed: Nigeria` carries the
+nationwide-delivery signal instead. Add a real address to `site.ts` and extend
+the schema in `src/lib/seo.ts` when you have one.
 
 ---
 
@@ -220,9 +228,9 @@ npm run lint       # eslint
 
 ## Before you launch
 
-- [ ] Replace the stock photography in `src/lib/images.ts` with your own equipment
+- [ ] Get real photos of the 27 products (15 have none yet) — see `src/lib/images.ts`
 - [ ] Confirm the WhatsApp number in `src/lib/site.ts` is the one you monitor
-- [ ] Add real prices and specifications to `src/lib/products.ts`
+- [ ] Confirm item 15 on the price list — it was missing from the list supplied
 - [ ] Add your Instagram / Facebook / TikTok URLs to `SITE.socials`
 - [ ] Set `NEXT_PUBLIC_SITE_URL` to the real domain
 - [ ] Send yourself a test order from a phone and check the message arrives right

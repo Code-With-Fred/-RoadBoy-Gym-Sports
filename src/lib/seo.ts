@@ -5,17 +5,19 @@ import { SITE } from './site'
 /**
  * Structured data.
  *
- * Two deliberate omissions, both because the information has not been supplied
- * and inventing it would be worse than leaving it out:
+ * No PostalAddress, deliberately: none has been supplied, and a fabricated shop
+ * address would put a wrong pin on the map and damage the local listing it was
+ * meant to help. `areaServed` carries the nationwide-delivery signal instead.
+ * Add a real address in site.ts, then extend here.
  *
- *   - No PostalAddress. A fabricated shop address would put a wrong pin on the
- *     map and damage the local listing it was meant to help. `areaServed`
- *     carries the nationwide-delivery signal instead.
- *   - No `offers` price on products. Google penalises prices that disagree with
- *     the page, and the page says "on request".
- *
- * Add a real address in site.ts and prices in products.ts, then extend here.
+ * Product prices are included only where the card shows one, so the markup can
+ * never disagree with the page — Google penalises that.
  */
+
+/** Structured data needs absolute URLs; local images are stored as paths. */
+function absolute(src: string): string {
+  return /^https?:\/\//.test(src) ? src : `${SITE.url}${src}`
+}
 
 export function organisationSchema() {
   return {
@@ -42,11 +44,15 @@ export function organisationSchema() {
       name: 'Gym and sports equipment',
       itemListElement: PRODUCTS.map((product) => ({
         '@type': 'Offer',
+        // Price only when the page shows one, so the markup never disagrees
+        // with what a visitor sees.
+        ...(product.priceNaira !== null ? { price: product.priceNaira, priceCurrency: 'NGN' } : {}),
         itemOffered: {
           '@type': 'Product',
           name: product.name,
           category: product.category,
           description: product.description,
+          ...(product.image ? { image: absolute(product.image.src) } : {}),
         },
       })),
     },

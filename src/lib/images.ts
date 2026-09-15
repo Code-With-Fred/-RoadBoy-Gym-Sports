@@ -1,14 +1,18 @@
 /**
  * Central image registry.
  *
- * IMPORTANT — these are stock placeholders, not RoadBoy's stock. Replace every
- * `src` below with photographs of the equipment you actually sell and the jobs
- * you have actually installed. For an equipment retailer that is not polish, it
- * is the single biggest trust factor on the page: buyers want to see the exact
- * machine that will arrive at their door.
+ * Every photograph on the page is referenced here, so swapping in RoadBoy's own
+ * photography never means touching a component.
  *
- * Upload to /public/images (or any host added to `images.remotePatterns` in
- * next.config.mjs), paste the URL here, and keep the keys unchanged.
+ * Product photos live in /public/images/products and are illustrative public
+ * domain images (sources in public/images/products/SOURCES.md). They show the
+ * right *kind* of product, not the exact model — which is why each is marked
+ * `representative: true` and the card labels it "Similar model shown". When
+ * the owner sends a real photo: drop it in the same folder under the product's
+ * id, and set `representative: false`.
+ *
+ * Products with no entry below show a designed "photo on WhatsApp" tile. That is
+ * on purpose: a stock photo of a *different* machine would mislead the buyer.
  */
 
 const UNSPLASH = 'https://images.unsplash.com'
@@ -18,9 +22,9 @@ function u(id: string): string {
 }
 
 /**
- * Caps the source rendition. next/image still generates the responsive srcset;
- * this stops us pulling a 5000px original over a Nigerian mobile connection.
- * Once the photos are local this can be reduced to `return src`.
+ * Caps the source rendition of remote stock photos. next/image still generates
+ * the responsive srcset; this stops us pulling a 5000px original over a mobile
+ * connection. Local files pass straight through.
  */
 export function sized(src: string, width = 1400, quality = 72): string {
   if (!src.startsWith(UNSPLASH)) return src
@@ -28,44 +32,52 @@ export function sized(src: string, width = 1400, quality = 72): string {
 }
 
 export type SiteImage = { src: string; alt: string }
+export type ProductImage = SiteImage & { representative: boolean }
 
 export const IMAGES = {
   hero: {
     src: u('photo-1534438327276-14e5300c3a48'),
-    alt: 'Commercial gym equipment installed in a modern training space',
+    alt: 'Rows of dumbbells and training equipment in a modern gym',
   },
   commercial: {
-    src: u('photo-1517836357463-d25dfeac3438'),
-    alt: 'A fully equipped commercial gym floor with racks and cardio machines',
+    src: u('photo-1540497077202-7c8a3999166f'),
+    alt: 'A bright commercial gym floor fitted with exercise bikes and strength machines',
   },
   delivery: {
-    src: u('photo-1546483875-ad9014c88eba'),
-    alt: 'Power racks set up and ready for use after installation',
+    src: u('photo-1586528116311-ad8dd3c8310d'),
+    alt: 'Warehouse with packed orders ready for dispatch',
   },
   finalCta: {
-    src: u('photo-1579758629938-03607ccdbaba'),
-    alt: 'Weight plates and lifting platforms in a finished gym',
+    src: u('photo-1623874514711-0f321325f318'),
+    alt: 'A large industrial-style gym hall with benches and equipment',
   },
   whyUs: {
-    src: u('photo-1550345332-09e3ac987658'),
-    alt: 'Equipment being set up on a gym floor',
+    src: u('photo-1553413077-190dd305871c'),
+    alt: 'Warehouse aisle stacked with stock',
   },
-
-  /** One image per catalogue entry. Keys match the ids in products.ts. */
-  products: {
-    treadmill: { src: u('photo-1517344884509-a0c97ec11bcc'), alt: 'Treadmills in a gym cardio area' },
-    bike: { src: u('photo-1534258936925-c58bed479fcb'), alt: 'Exercise bike in a training space' },
-    dumbbells: { src: u('photo-1519085360753-af0119f7cbe7'), alt: 'A full dumbbell rack' },
-    plates: { src: u('photo-1581009146145-b5ef050c2e1e'), alt: 'Olympic weight plates loaded on a barbell' },
-    bench: { src: u('photo-1532384748853-8f54a8f476e2'), alt: 'An adjustable gym bench set up for pressing' },
-    multiGym: { src: u('photo-1571019613454-1cb2f99b2d8b'), alt: 'A multi-station gym machine' },
-    powerRack: { src: u('photo-1546483875-ad9014c88eba'), alt: 'A power rack with safety catches' },
-    pullUpBar: { src: u('photo-1598268030450-7a476f602bf6'), alt: 'A pull-up bar station' },
-    kettlebells: { src: u('photo-1558611848-73f7eb4001a1'), alt: 'Cast iron kettlebells' },
-    cableMachine: { src: u('photo-1517838277536-f5f99be501cd'), alt: 'A cable pulley machine' },
-    legMachine: { src: u('photo-1541534741688-6078c6bfb5c5'), alt: 'A leg training machine' },
-    accessories: { src: u('photo-1571902943202-507ec2618e8f'), alt: 'Gym mats, bands and training accessories' },
-  } satisfies Record<string, SiteImage>,
-
   og: { src: u('photo-1534438327276-14e5300c3a48'), alt: 'RoadBoy Gym&Sports Equipments' },
 } as const
+
+/**
+ * Product photos, keyed by the product id in products.ts. Only products whose
+ * photo is genuinely the same type of item appear here.
+ */
+const PRODUCT_IMAGES: Record<string, ProductImage> = {
+  'treadmill-2-5hp': { src: '/images/products/treadmill-2-5hp.jpg', alt: 'Runner training on a treadmill', representative: true },
+  'platform-treadmill': { src: '/images/products/platform-treadmill.jpg', alt: 'Person running on a treadmill', representative: true },
+  'joola-table-tennis': { src: '/images/products/joola-table-tennis.jpg', alt: 'Players at a table tennis table', representative: true },
+  'smc-table-tennis': { src: '/images/products/smc-table-tennis.jpg', alt: 'A player at a table tennis table', representative: true },
+  'soccer-board-6ft': { src: '/images/products/soccer-board-6ft.jpg', alt: 'A wooden soccer board (table football)', representative: true },
+  'snooker-8ft': { src: '/images/products/snooker-8ft.jpg', alt: 'Red snooker balls on a green snooker table', representative: true },
+  'snooker-4-in-1-6ft': { src: '/images/products/snooker-4-in-1-6ft.jpg', alt: 'A snooker table set up on a terrace', representative: true },
+  'rowing-machine': { src: '/images/products/rowing-machine.jpg', alt: 'Person training on a rowing machine', representative: true },
+  'spinning-bike': { src: '/images/products/spinning-bike.jpg', alt: 'Indoor spinning bikes', representative: true },
+  'three-station-gym': { src: '/images/products/three-station-gym.jpg', alt: 'Multi-station gym machines', representative: true },
+  'big-ab-crunch': { src: '/images/products/big-ab-crunch.jpg', alt: 'An ab crunch machine', representative: true },
+  'power-tower': { src: '/images/products/power-tower.jpg', alt: 'A pull-up and dip station', representative: true },
+}
+
+/** The photo for a product, or null to show the "photo on WhatsApp" tile. */
+export function productImage(id: string): ProductImage | null {
+  return PRODUCT_IMAGES[id] ?? null
+}

@@ -133,3 +133,16 @@
   }
   .reveal, .js .reveal[data-reveal='pending'] { opacity: 1 !important; transform: none !important; }
 }
+
+/*
+ * The `hidden` attribute must always win.
+ *
+ * Browsers hide [hidden] with a low-priority UA rule, and any display utility on
+ * the same element (`flex`, `grid`, `block`) silently overrides it. That is
+ * exactly how the mobile menu drawer — `hidden` plus `flex` — ended up covering
+ * the whole page on phones. This rule makes the attribute authoritative for the
+ * drawer, the collapsed catalogue cards and the closed FAQ answers alike.
+ */
+[hidden] {
+  display: none !important;
+}

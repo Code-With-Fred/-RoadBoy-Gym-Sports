@@ -1,4 +1,5 @@
 import { SITE } from './site'
+import { formatNaira } from './utils'
 
 /**
  * WhatsApp is the checkout. Every link on this site is built here so no button
@@ -10,17 +11,29 @@ function link(message: string): string {
   return `https://wa.me/${SITE.contact.whatsapp}?text=${encodeURIComponent(message)}`
 }
 
-/** General enquiry — hero, navigation, floating bubble. */
-export function waGeneral(): string {
-  return link(
-    `Hello ${SITE.name}, I'm interested in your gym equipment. I'd like to make an inquiry.`,
-  )
+/** Any fully custom message, e.g. a per-product override. */
+export function waCustom(message: string): string {
+  return link(message)
 }
 
-/** Product enquiry. The product name is what makes this useful to the seller. */
-export function waProduct(productName: string): string {
+/** General enquiry — hero, navigation, floating bubble. */
+export function waGeneral(): string {
+  return link(`Hello ${SITE.name}, I'm interested in your gym equipment. I'd like to make an inquiry.`)
+}
+
+/**
+ * Product order. The product name and the price the customer saw are both in
+ * the message, so RoadBoy can reply with availability and delivery straight
+ * away instead of asking "which one?".
+ */
+export function waProduct(productName: string, priceNaira: number | null = null): string {
+  if (priceNaira === null) {
+    return link(
+      `Hello ${SITE.name}, I'm interested in the ${productName}. Please send me the price, specifications and availability.`,
+    )
+  }
   return link(
-    `Hello ${SITE.name}, I'm interested in the ${productName}. Please send me the price, specifications and availability.`,
+    `Hello ${SITE.name}, I'd like to order the ${productName} (${formatNaira(priceNaira)}). Please confirm availability and delivery to my location.`,
   )
 }
 
@@ -47,7 +60,5 @@ export function waAdvice(): string {
 
 /** Quote request from the final call to action. */
 export function waQuote(): string {
-  return link(
-    `Hello ${SITE.name}, please send me a quote for gym equipment with delivery and installation.`,
-  )
+  return link(`Hello ${SITE.name}, please send me a quote for gym equipment with delivery and installation.`)
 }

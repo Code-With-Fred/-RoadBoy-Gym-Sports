@@ -24,7 +24,7 @@ export function Hero() {
       <div className="absolute inset-0">
         <SmartImage src={IMAGES.hero.src} alt={IMAGES.hero.alt} width={2000} quality={76} priority sizes="100vw" />
         {/* Two-stop scrim: keeps the type readable without flattening the photo. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/45" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/60" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink/88 via-ink/35 to-transparent" />
       </div>
 

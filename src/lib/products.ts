@@ -1,24 +1,25 @@
-import { IMAGES } from './images'
-import { waProduct } from './whatsapp'
+import { productImage } from './images'
+import { waCustom, waProduct } from './whatsapp'
 
 /**
- * The equipment catalogue.
+ * The equipment catalogue — RoadBoy's current price list.
  *
- * This is the file the owner edits most. Each entry is plain data — add, remove
- * or reorder freely and the grid, the filter tabs and the WhatsApp messages all
- * follow automatically.
+ * This is the file the owner edits most. Each entry is plain data: add, remove
+ * or reorder freely and the grid, the filter tabs, the counts and the WhatsApp
+ * messages all follow.
  *
- * Two deliberate blanks, because inventing either would mislead a buyer about
- * to spend six figures:
+ * Rules the data keeps to, so the page never tells a buyer something untrue:
  *
- *   price — `null` renders "Price on request" and sends them to WhatsApp.
- *           Fill it in as a plain string, e.g. price: '₦450,000'.
- *   specs — empty renders "Full specifications on request". Fill it in with
- *           real figures from the actual stock, e.g.
- *           specs: [{ label: 'Motor', value: '2.5 HP' }]
+ *   priceNaira — whole Naira as a number, e.g. 830000. `null` renders
+ *                "Price on request".
+ *   specs      — only facts from the supplier's list. Nothing is estimated;
+ *                a spec that was not supplied is simply left out.
+ *
+ * Products appear in the order below. The first `INITIAL_VISIBLE` show on
+ * load; the rest sit behind "Show all" (still in the HTML for search engines).
  */
 
-export type CategoryFilter = 'treadmills' | 'cardio' | 'strength' | 'free-weights' | 'accessories'
+export type CategoryFilter = 'cardio' | 'strength' | 'games' | 'recovery'
 
 export interface ProductSpec {
   label: string
@@ -32,9 +33,14 @@ export interface Product {
   category: string
   /** Drives the filter tabs. */
   filter: CategoryFilter
-  image: { src: string; alt: string }
-  /** null = "Price on request". Set a string like '₦450,000' to show a price. */
-  price: string | null
+  /**
+   * null renders a designed "photo on request" tile. That is deliberate: a
+   * stock photo of a *different* machine would mislead the buyer, so a product
+   * only shows a picture when the picture is the right kind of product.
+   */
+  image: { src: string; alt: string; representative: boolean } | null
+  /** Whole Naira. null renders "Price on request". */
+  priceNaira: number | null
   description: string
   specs: ProductSpec[]
   availability: string
@@ -46,163 +52,343 @@ const AVAILABLE = 'Available to order'
 
 export const PRODUCTS: Product[] = [
   {
-    id: 'treadmill',
-    name: 'Treadmill',
-    category: 'Treadmills',
-    filter: 'treadmills',
-    image: IMAGES.products.treadmill,
-    price: null,
-    description:
-      'Motorised treadmills for home and commercial use. Tell us your space and how many people will use it daily and we will match you to the right model.',
-    specs: [],
-    availability: AVAILABLE,
-  },
-  {
-    id: 'exercise-bike',
-    name: 'Exercise Bike',
-    category: 'Exercise Bikes',
+    id: 'treadmill-2-5hp',
+    name: '2.5HP Treadmill',
+    category: 'Treadmill',
     filter: 'cardio',
-    image: IMAGES.products.bike,
-    price: null,
+    image: productImage('treadmill-2-5hp'),
+    priceNaira: 830_000,
     description:
-      'Upright, recumbent and spin bikes. A quiet, low-impact option that suits small rooms and apartments.',
-    specs: [],
+      'Technofitness motorised treadmill, supplied with a waist massager, a pair of 2lb dumbbells and a twister.',
+    specs: [
+      { label: 'Brand', value: 'Technofitness' },
+      { label: 'Motor', value: '2.5 HP' },
+      { label: 'Max user weight', value: '120 kg' },
+      { label: 'Includes', value: 'Waist massager, 2lb dumbbells, twister' },
+    ],
     availability: AVAILABLE,
   },
   {
-    id: 'dumbbells',
-    name: 'Dumbbells',
-    category: 'Free Weights',
-    filter: 'free-weights',
-    image: IMAGES.products.dumbbells,
-    price: null,
-    description:
-      'Fixed and adjustable dumbbells, sold individually or as a full rack set. The most useful first purchase for any home gym.',
-    specs: [],
-    availability: AVAILABLE,
-  },
-  {
-    id: 'weight-plates',
-    name: 'Weight Plates',
-    category: 'Free Weights',
-    filter: 'free-weights',
-    image: IMAGES.products.plates,
-    price: null,
-    description:
-      'Rubber, bumper and cast iron plates in standard and Olympic bore. Available as loose plates or a complete loaded set.',
-    specs: [],
-    availability: AVAILABLE,
-  },
-  {
-    id: 'gym-bench',
-    name: 'Gym Bench',
-    category: 'Benches',
+    id: 'ab-coaster',
+    name: 'Ab Coaster',
+    category: 'Core',
     filter: 'strength',
-    image: IMAGES.products.bench,
-    price: null,
-    description:
-      'Flat, incline and fully adjustable benches. Pairs with dumbbells or a rack to turn one corner into a complete training station.',
+    image: productImage('ab-coaster'),
+    priceNaira: 400_000,
+    description: 'A guided abdominal machine for focused core training.',
     specs: [],
     availability: AVAILABLE,
   },
   {
-    id: 'multi-gym',
-    name: 'Multi-Gym Machine',
+    id: 'platform-treadmill',
+    name: 'Platform Treadmill with Remote Control',
+    category: 'Treadmill',
+    filter: 'cardio',
+    image: productImage('platform-treadmill'),
+    priceNaira: 420_000,
+    description: 'A compact platform treadmill operated by remote control.',
+    specs: [
+      { label: 'Control', value: 'Remote control' },
+      { label: 'Max user weight', value: '120 kg' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'joola-table-tennis',
+    name: 'JOOLA Table Tennis Table',
+    category: 'Table Tennis',
+    filter: 'games',
+    image: productImage('joola-table-tennis'),
+    priceNaira: 750_000,
+    description: 'JOOLA table tennis table with an aluminium top board on big-tyre wheels.',
+    specs: [
+      { label: 'Brand', value: 'JOOLA' },
+      { label: 'Top board', value: 'Aluminium' },
+      { label: 'Wheels', value: 'Big tyre' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'soccer-board-6ft',
+    name: '6ft Soccer Board',
+    category: 'Table Football',
+    filter: 'games',
+    image: productImage('soccer-board-6ft'),
+    priceNaira: 600_000,
+    description: 'A six-foot soccer board (table football) for homes, lounges, offices and game rooms.',
+    specs: [{ label: 'Size', value: '6 ft' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'three-station-gym',
+    name: '3-Station Gym',
     category: 'Multi-Gym',
     filter: 'strength',
-    image: IMAGES.products.multiGym,
-    price: null,
-    description:
-      'All-in-one stations covering pressing, pulling and leg work in a single footprint. The efficient choice when floor space is tight.',
-    specs: [],
+    image: productImage('three-station-gym'),
+    priceNaira: 1_200_000,
+    description: 'A three-station multi-gym that brings a range of strength exercises onto one frame.',
+    specs: [{ label: 'Stations', value: '3' }],
     availability: AVAILABLE,
   },
   {
-    id: 'power-rack',
-    name: 'Power Rack',
-    category: 'Racks',
+    id: 'power-tower',
+    name: 'Power Tower',
+    category: 'Bodyweight',
     filter: 'strength',
-    image: IMAGES.products.powerRack,
-    price: null,
-    description:
-      'Squat and power racks with safety catches, for training heavy on your own with confidence. The backbone of a serious setup.',
+    image: productImage('power-tower'),
+    priceNaira: 350_000,
+    description: 'Pull-ups, dips and hanging knee raises on a single station.',
     specs: [],
     availability: AVAILABLE,
   },
   {
-    id: 'pull-up-bar',
-    name: 'Pull-Up Bar',
-    category: 'Pull-Up Bars',
+    id: 'plate-fitness-board',
+    name: 'Plate Fitness Board',
+    category: 'Fitness Plate',
+    filter: 'recovery',
+    image: productImage('plate-fitness-board'),
+    priceNaira: 120_000,
+    description: 'A plate fitness board for home use. Message us for a photo and video of this exact model.',
+    specs: [],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'stair-climber',
+    name: 'Stair Climber',
+    category: 'Stair Climber',
+    filter: 'cardio',
+    image: productImage('stair-climber'),
+    priceNaira: 300_000,
+    description: 'Stair-climbing cardio that builds leg strength and endurance.',
+    specs: [],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'big-ab-crunch',
+    name: 'Big Ab Crunch',
+    category: 'Core',
     filter: 'strength',
-    image: IMAGES.products.pullUpBar,
-    price: null,
-    description:
-      'Wall-mounted, ceiling-mounted and free-standing pull-up stations. Our installers fix it properly and safely.',
+    image: productImage('big-ab-crunch'),
+    priceNaira: 330_000,
+    description: 'An ab crunch machine for guided core training.',
     specs: [],
     availability: AVAILABLE,
   },
   {
-    id: 'kettlebells',
-    name: 'Kettlebells',
-    category: 'Free Weights',
-    filter: 'free-weights',
-    image: IMAGES.products.kettlebells,
-    price: null,
-    description:
-      'Cast iron and competition kettlebells, sold singly or as a graduated set. Small footprint, wide range of training.',
-    specs: [],
-    availability: AVAILABLE,
-  },
-  {
-    id: 'cable-machine',
-    name: 'Cable Machine',
-    category: 'Cable Machines',
+    id: 'squat-machine-horse-rider',
+    name: 'Squat Machine (Horse Rider)',
+    category: 'Lower Body',
     filter: 'strength',
-    image: IMAGES.products.cableMachine,
-    price: null,
-    description:
-      'Single and dual pulley stations with attachments. Adds dozens of exercises to a gym without adding dozens of machines.',
+    image: productImage('squat-machine-horse-rider'),
+    priceNaira: 340_000,
+    description: 'A horse-rider style squat machine for lower-body training.',
     specs: [],
     availability: AVAILABLE,
   },
   {
-    id: 'leg-machine',
-    name: 'Leg Machine',
-    category: 'Leg Machines',
+    id: 'smc-table-tennis',
+    name: 'SMC Top Table Tennis Table',
+    category: 'Table Tennis',
+    filter: 'games',
+    image: productImage('smc-table-tennis'),
+    priceNaira: 600_000,
+    description: 'Table tennis table with an SMC top board.',
+    specs: [{ label: 'Top board', value: 'SMC' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'weight-bench-lat-pulldown',
+    name: 'Weight Bench with Lat Pulldown',
+    category: 'Bench',
     filter: 'strength',
-    image: IMAGES.products.legMachine,
-    price: null,
-    description:
-      'Leg press, extension, curl and hack squat machines for commercial floors and well-equipped home gyms.',
+    image: productImage('weight-bench-lat-pulldown'),
+    priceNaira: 330_000,
+    description: 'A weight bench with a built-in lat pulldown for back and upper-body work.',
     specs: [],
     availability: AVAILABLE,
   },
   {
-    id: 'accessories',
-    name: 'Gym Accessories',
-    category: 'Accessories',
-    filter: 'accessories',
-    image: IMAGES.products.accessories,
-    price: null,
+    id: 'massage-gun-double-head',
+    name: 'Double Head Massage Gun',
+    category: 'Massage',
+    filter: 'recovery',
+    image: productImage('massage-gun-double-head'),
+    priceNaira: 60_000,
+    description: 'A handheld massage gun with a double head, for recovery after training.',
+    specs: [{ label: 'Head', value: 'Double' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'snooker-8ft',
+    name: '8ft Foreign Snooker Table',
+    category: 'Snooker',
+    filter: 'games',
+    image: productImage('snooker-8ft'),
+    priceNaira: 1_150_000,
+    description: 'An imported eight-foot snooker table, supplied with a double set of accessories.',
+    specs: [
+      { label: 'Size', value: '8 ft' },
+      { label: 'Accessories', value: 'Double set' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'rowing-machine',
+    name: 'Semi-Commercial Rowing Machine',
+    category: 'Rowing',
+    filter: 'cardio',
+    image: productImage('rowing-machine'),
+    priceNaira: 600_000,
+    description: 'A semi-commercial rowing machine for full-body cardio at home or in a small gym.',
+    specs: [{ label: 'Grade', value: 'Semi-commercial' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'foot-massager-4d',
+    name: '4D Foot Massager',
+    category: 'Massage',
+    filter: 'recovery',
+    image: productImage('foot-massager-4d'),
+    priceNaira: 180_000,
+    description: 'A 4D foot massager for relief after long days and hard sessions.',
+    specs: [],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'standing-mini-stepper',
+    name: 'Standing Mini Stepper',
+    category: 'Stepper',
+    filter: 'cardio',
+    image: productImage('standing-mini-stepper'),
+    priceNaira: 240_000,
+    description: 'A standing mini stepper, supplied with a pair of aerobic dumbbells and a waist twister.',
+    specs: [{ label: 'Includes', value: 'Aerobic dumbbells, waist twister' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'home-weight-bench-lat-pulldown',
+    name: 'Home Use Weight Bench with Lat Pulldown',
+    category: 'Bench',
+    filter: 'strength',
+    image: productImage('home-weight-bench-lat-pulldown'),
+    priceNaira: 300_000,
+    description: 'A home-use weight bench with a lat pulldown attachment.',
+    specs: [{ label: 'Use', value: 'Home' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'snooker-4-in-1-6ft',
+    name: '4-in-1 6ft Foreign Snooker Table',
+    category: 'Snooker',
+    filter: 'games',
+    image: productImage('snooker-4-in-1-6ft'),
+    priceNaira: 620_000,
     description:
-      'Mats, resistance bands, skipping ropes, barbells, collars, storage racks and gym flooring. Everything that finishes a setup.',
+      'An imported six-foot snooker table that also plays table tennis, and serves as a home or office table.',
+    specs: [
+      { label: 'Size', value: '6 ft' },
+      { label: 'Converts to', value: 'Table tennis, home or office table' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'platform-massager',
+    name: 'Platform Massager with Bluetooth',
+    category: 'Massage',
+    filter: 'recovery',
+    image: productImage('platform-massager'),
+    priceNaira: 230_000,
+    description: 'A platform massager with Bluetooth, operated by remote control.',
+    specs: [
+      { label: 'Connectivity', value: 'Bluetooth' },
+      { label: 'Control', value: 'Remote control' },
+      { label: 'Max user weight', value: '120 kg' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'single-station-gym',
+    name: 'Single Station Gym',
+    category: 'Multi-Gym',
+    filter: 'strength',
+    image: productImage('single-station-gym'),
+    priceNaira: 750_000,
+    description: 'A single-station home gym combining several strength exercises in one machine.',
+    specs: [{ label: 'Stations', value: '1' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'spinning-bike',
+    name: 'Home Use Spinning Bike',
+    category: 'Exercise Bike',
+    filter: 'cardio',
+    image: productImage('spinning-bike'),
+    priceNaira: 350_000,
+    description: 'A home-use spinning bike for indoor cycling workouts.',
+    specs: [
+      { label: 'Use', value: 'Home' },
+      { label: 'Max user weight', value: '120 kg' },
+    ],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'crazy-fit-massager',
+    name: 'Crazy Fit Massager',
+    category: 'Massage',
+    filter: 'recovery',
+    image: productImage('crazy-fit-massager'),
+    priceNaira: 430_000,
+    description: 'A Crazy Fit massager with a higher user weight capacity.',
+    specs: [{ label: 'Max user weight', value: '130 kg' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'massage-gun-single-head',
+    name: 'Single Head Massage Gun',
+    category: 'Massage',
+    filter: 'recovery',
+    image: productImage('massage-gun-single-head'),
+    priceNaira: 50_000,
+    description: 'A handheld single-head massage gun for recovery after training.',
+    specs: [{ label: 'Head', value: 'Single' }],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'mini-stepper-lat-pull',
+    name: 'Mini Stepper with Lat Pull',
+    category: 'Stepper',
+    filter: 'cardio',
+    image: productImage('mini-stepper-lat-pull'),
+    priceNaira: 150_000,
+    description: 'A mini stepper with lat pull, working the legs and upper body together.',
+    specs: [],
+    availability: AVAILABLE,
+  },
+  {
+    id: 'sit-up-bench',
+    name: 'Sit-Up Bench',
+    category: 'Core',
+    filter: 'strength',
+    image: productImage('sit-up-bench'),
+    priceNaira: 120_000,
+    description: 'A sit-up bench for core training at home.',
     specs: [],
     availability: AVAILABLE,
   },
 ]
 
-/** Filter tabs. `all` is prepended by the catalogue component. */
+/** How many products the "All" tab shows before "Show all". */
+export const INITIAL_VISIBLE = 8
+
 export const CATEGORY_TABS: Array<{ value: CategoryFilter | 'all'; label: string }> = [
   { value: 'all', label: 'All' },
-  { value: 'treadmills', label: 'Treadmills' },
   { value: 'cardio', label: 'Cardio' },
   { value: 'strength', label: 'Strength' },
-  { value: 'free-weights', label: 'Free Weights' },
-  { value: 'accessories', label: 'Accessories' },
+  { value: 'games', label: 'Sports & Games' },
+  { value: 'recovery', label: 'Massage & Recovery' },
 ]
 
 /** The WhatsApp link for a product, honouring any per-product override. */
 export function productLink(product: Product): string {
-  if (!product.whatsappMessage) return waProduct(product.name)
-  return `https://wa.me/2348053594533?text=${encodeURIComponent(product.whatsappMessage)}`
+  return product.whatsappMessage ? waCustom(product.whatsappMessage) : waProduct(product.name, product.priceNaira)
 }
